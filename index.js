@@ -36,5 +36,5 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-// EN ÖNEMLİ KISIM: Aşağıdaki tek tırnakların arasına Discord'dan aldığın Token'ı yapıştır
-client.login('MTU3MTE0MDgxODk1MTk5NTUzNA.GoawhJ.1SfSYs_iqs2dqXb11Qh7-saVjgir_xOfwKECU4');
+client.login(process.env.DISCORD_TOKEN);
+
