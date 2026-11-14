@@ -5,7 +5,7 @@ http.createServer((req, res) => {
     res.end('Bot aktif!\n');
 }).listen(process.env.PORT || 3000);
 
-// --- GLOBAL HATA KORUMASI (Botun çökmesini önler) ---
+// --- GLOBAL HATA KORUMASI ---
 process.on('unhandledRejection', error => console.error('Asenkron Hata:', error));
 process.on('uncaughtException', error => console.error('Sistem Hatası:', error));
 
@@ -30,6 +30,10 @@ const client = new Client({
 });
 
 const PREFIX = "a!";
+
+// Partner sayaçları (İstediğin istatistik görünümü için)
+let toplamPartner = 35;
+let haftalikPartner = 10;
 
 // --- BOT HAZIR OLDUĞUNDA VE KOMUTLARI YÜKLEME ---
 client.once('clientReady', async () => {
@@ -65,7 +69,7 @@ client.once('clientReady', async () => {
 // --- KAPSAMLI OTOMATİK LOG SİSTEMLERİ ---
 // ==========================================
 
-// 1. Üye Katılma Logu
+// 1. Üye Katılma Logu (#hosgeldin-hg)
 client.on('guildMemberAdd', member => {
     const channel = member.guild.channels.cache.find(ch => ch.name === 'hosgeldin-hg' || ch.name === 'giriş-çıkış-log');
     if (!channel) return;
@@ -83,14 +87,15 @@ client.on('guildMemberAdd', member => {
     channel.send({ embeds: [embed] }).catch(() => {});
 });
 
-// 2. Üye Ayrılma Logu
+// 2. Üye Ayrılma Logu (#hosgeldin-hg)
 client.on('guildMemberRemove', member => {
     const channel = member.guild.channels.cache.find(ch => ch.name === 'hosgeldin-hg' || ch.name === 'giriş-çıkış-log');
     if (!channel) return;
 
     const embed = new EmbedBuilder()
         .setTitle('👋 Bir Üye Ayrıldı')
-        .setDescription(`**${member.user.tag}** aramızdan ayrıldı.`);
+        .setDescription(`**${member.user.tag}** aramızdan ayrıldı.`)
+        .setColor('#ff3333');
     channel.send({ embeds: [embed] }).catch(() => {});
 });
 
@@ -105,7 +110,7 @@ client.on('messageDelete', message => {
         .setColor('#ff3333')
         .addFields(
             { name: '👤 Yazan', value: `${message.author} (${message.author.tag})`, inline: true },
-            { name: ' kanal', value: `${message.channel}`, inline: true },
+            { name: '📍 Kanal', value: `${message.channel}`, inline: true },
             { name: '📝 Silinen Mesaj', value: message.content || '*İçerik yok (Görsel veya Embed)*' }
         )
         .setTimestamp();
@@ -156,7 +161,7 @@ client.on('messageCreate', async message => {
                 },
                 { 
                     name: '🤝 Partnerlik & Loglar', 
-                    value: '`a!partner` *(#partner-log kanalına gider)*\n*(Otomatik Loglar: #mesaj-log, #hosgeldin-hg)*' 
+                    value: '`a!partner [metin]` *(#partner-log kanalına gider)*\n*(Otomatik Loglar: #mesaj-log, #hosgeldin-hg)*' 
                 }
             )
             .setFooter({ text: 'Gelişmiş Bot Altyapısı' })
@@ -287,22 +292,29 @@ client.on('messageCreate', async message => {
         return message.channel.send(`📢 **Duyuru:** ${text}`);
     }
 
-    // Partner Log
+    // İSTEDİĞİN ÖZEL TASARIMLI PARTNER LOG SİSTEMİ (a!)
     if (cmd === 'partner') {
         const text = args.join(' ');
         if (!text) return message.reply('⚠️ Partner metnini yazın!');
-        const logChannel = message.guild.channels.cache.find(ch => ch.name === 'partner-log');
+        const logChannel = message.guild.channels.cache.find(ch => ch.name.toLowerCase() === 'partner-log' || ch.name.toLowerCase() === 'partner');
         if (!logChannel) return message.reply('⚠️ `#partner-log` adında bir kanal bulamadım!');
 
+        toplamPartner++;
+        haftalikPartner++;
+
         const embed = new EmbedBuilder()
-            .setTitle('🤝 Yeni Partner Duyurusu!')
-            .setDescription(text)
-            .setColor('#ffd700')
-            .setFooter({ text: `${message.author.tag} tarafından paylaşıldı.` })
+            .setTitle('🟩 Partner Kaydı')
+            .setDescription(`> ${message.author} partner mesajı attı!\n\n**Metin/İçerik:**\n${text}`)
+            .setColor('#00FF00')
+            .addFields(
+                { name: '📊 Bu Hafta', value: `**${haftalikPartner}** partner`, inline: true },
+                { name: '🏆 Tüm Zamanlar', value: `**${toplamPartner}** partner`, inline: true }
+            )
+            .setFooter({ text: `ID: ${message.author.id}` })
             .setTimestamp();
 
         await logChannel.send({ embeds: [embed] }).catch(() => {});
-        return message.reply('✅ Partner duyurunuz başarıyla `#partner-log` kanalına gönderildi!');
+        return message.reply('✅ Partner duyurunuz başarıyla `#partner-log` kanalına kaydedildi!');
     }
 });
 
@@ -320,7 +332,7 @@ client.on('interactionCreate', async interaction => {
             .addFields(
                 { name: '🛡️ Moderasyon', value: '`/yasakla`, `/yasak-kaldır`, `/at`, `/sustur`, `/temizle`, `/yavaş-mod`, `/kilitle`, `/kilit-aç`' },
                 { name: '📊 Bilgi', value: '`/kullanıcı-bilgi`, `/sunucu-bilgi`, `/duyuru`, `/ping`' },
-                { name: '🤝 Partner & Loglar', value: '`/partner` *(#partner-log kanalına gider)*' }
+                { name: '🤝 Partner & Loglar', value: '`/partner [metin]` *(#partner-log kanalına gider)*' }
             );
         return await interaction.reply({ embeds: [embed], ephemeral: true });
     }
@@ -430,15 +442,29 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: '✅ Duyuru gönderildi.', ephemeral: true });
     }
 
+    // İSTEDİĞİN ÖZEL TASARIMLI PARTNER LOG SİSTEMİ (/)
     if (commandName === 'partner') {
         await interaction.deferReply({ ephemeral: true });
         const text = interaction.options.getString('metin');
-        const logChannel = interaction.guild.channels.cache.find(ch => ch.name === 'partner-log');
+        const logChannel = interaction.guild.channels.cache.find(ch => ch.name.toLowerCase() === 'partner-log' || ch.name.toLowerCase() === 'partner');
         if (!logChannel) return await interaction.editReply('⚠️ `#partner-log` kanalı bulunamadı!');
 
-        const embed = new EmbedBuilder().setTitle('🤝 Yeni Partner Duyurusu!').setDescription(text).setColor('#ffd700');
+        toplamPartner++;
+        haftalikPartner++;
+
+        const embed = new EmbedBuilder()
+            .setTitle('🟩 Partner Kaydı')
+            .setDescription(`> ${interaction.user} partner mesajı attı!\n\n**Metin/İçerik:**\n${text}`)
+            .setColor('#00FF00')
+            .addFields(
+                { name: '📊 Bu Hafta', value: `**${haftalikPartner}** partner`, inline: true },
+                { name: '🏆 Tüm Zamanlar', value: `**${toplamPartner}** partner`, inline: true }
+            )
+            .setFooter({ text: `ID: ${interaction.user.id}` })
+            .setTimestamp();
+
         await logChannel.send({ embeds: [embed] }).catch(() => {});
-        await interaction.editReply('✅ Partner duyurusu başarıyla `#partner-log` kanalına gönderildi!');
+        await interaction.editReply('✅ Partner duyurusu `#partner-log` kanalına başarıyla gönderildi!');
     }
 });
 
