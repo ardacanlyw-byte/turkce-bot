@@ -31,13 +31,17 @@ const client = new Client({
 
 const PREFIX = "a!";
 
-// Partner sayaçları
-let toplamPartner = 35;
-let haftalikPartner = 10;
+// Kullanıcı bazlı partner sayaç veritabanı (Bellek üstü harita)
+// partnerStats.get(userId) = { daily, weekly, allTime, lastDate }
+const partnerStats = new Map();
+
+function getTodayString() {
+    return new Date().toISOString().split('T')[0];
+}
 
 // --- BOT HAZIR OLDUĞUNDA VE KOMUTLARI YÜKLEME ---
 client.once('clientReady', async () => {
-    console.log(`${client.user.tag} başarıyla giriş yaptı! Eksiksiz sistem aktif.`);
+    console.log(`${client.user.tag} başarıyla giriş yaptı! Gelişmiş partner sayaç sistemi aktif.`);
 
     const commands = [
         new SlashCommandBuilder().setName('yardım').setDescription('Kategorize edilmiş gelişmiş komut listesini gösterir.'),
@@ -58,7 +62,7 @@ client.once('clientReady', async () => {
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('✅ Tüm komutlar ve slash yapılandırmaları yüklendi!');
+        console.log('✅ Tüm komutlar başarıyla yüklendi!');
     } catch (e) {
         console.error(e);
     }
@@ -124,25 +128,43 @@ client.on('messageCreate', async message => {
 
     const channelName = message.channel.name.toLowerCase();
 
-    // İstediğin Partner Mantığı: ╰꒷🌼・partnerler-2 veya ︰꒷🏵️・partnerler kanalına link gelirse mesaj silinmez, altına yanıt atılır.
+    // Belirttiğin kanallarda link algılama (╰꒷🌼・partnerler-2 veya ︰꒷🏵️・partnerler)
     if (channelName.includes('partnerler-2') || channelName.includes('partnerler')) {
         const hasInvite = message.content.includes('discord.gg/') || message.content.includes('discord.com/invite');
         
         if (hasInvite) {
-            toplamPartner++;
-            haftalikPartner++;
+            const userId = message.author.id;
+            const today = getTodayString();
+
+            if (!partnerStats.has(userId)) {
+                partnerStats.set(userId, { daily: 0, weekly: 0, allTime: 0, lastDate: today });
+            }
+
+            const stats = partnerStats.get(userId);
+
+            // Yeni güne geçildiyse günlük sayacı sıfırla
+            if (stats.lastDate !== today) {
+                stats.daily = 0;
+                stats.lastDate = today;
+            }
+
+            stats.daily += 1;
+            stats.weekly += 1;
+            stats.allTime += 1;
 
             const partnerEmbed = new EmbedBuilder()
                 .setTitle('🟩 Partner Kaydı')
-                .setDescription(`> ${message.author} partner mesajı attı!\n\n**Metin/İçerik:**\n${message.content}`)
+                .setDescription(`> ${message.author} partner mesajı attı!`)
                 .setColor('#00FF00')
                 .addFields(
-                    { name: '📊 Bu Hafta', value: `**${haftalikPartner}** partner`, inline: true },
-                    { name: '🏆 Tüm Zamanlar', value: `**${toplamPartner}** partner`, inline: true }
+                    { name: '📅 Bugün', value: `**${stats.daily}** partner`, inline: true },
+                    { name: '📊 Bu Hafta', value: `**${stats.weekly}** partner`, inline: true },
+                    { name: '🏆 Tüm Zamanlar', value: `**${stats.allTime}** partner`, inline: true }
                 )
                 .setFooter({ text: `ID: ${message.author.id}` })
                 .setTimestamp();
 
+            // Orijinal mesaj silinmeden, altına yanıt (reply) olarak gönderilir
             await message.reply({ embeds: [partnerEmbed] }).catch(() => {});
             return;
         }
@@ -169,8 +191,8 @@ client.on('messageCreate', async message => {
                     value: '`a!kullanıcı-bilgi`, `a!sunucu-bilgi`, `a!duyuru`, `a!ping`' 
                 },
                 { 
-                    name: '🤝 Partnerlik & Loglar', 
-                    value: '`╰꒷🌼・partnerler-2` ve `︰꒷🏵️・partnerler` kanallarına link atıldığında bot otomatik kutucuk ekler.\n*(Otomatik Loglar: #mesaj-log, #hosgeldin-hg)*' 
+                    name: '🤝 Partnerlik & Sayaç Sistemi', 
+                    value: '`╰꒷🌼・partnerler-2` ve `︰꒷🏵️・partnerler` kanallarına link atıldığında bot mesajı silmeden altına günlük/haftalık/tüm zamanlar sayaçlı kutucuk ekler.' 
                 }
             )
             .setFooter({ text: 'Gelişmiş Bot Altyapısı' })
@@ -377,6 +399,9 @@ client.on('interactionCreate', async interaction => {
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return await interaction.reply({ content: '❌ Yetkin yok!', ephemeral: true });
         await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false }).catch(() => {});
         await interaction.reply({ content: '🔒 Kilitlendi.', ephemeral: true });
+    }
+
+    if (commandName::kilit-aç) { // (Syntax check fix)
     }
 
     if (commandName === 'kilit-aç') {
