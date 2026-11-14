@@ -32,7 +32,6 @@ const client = new Client({
 const PREFIX = "a!";
 
 // Kullanıcı bazlı partner sayaç veritabanı (Bellek üstü harita)
-// partnerStats.get(userId) = { daily, weekly, allTime, lastDate }
 const partnerStats = new Map();
 
 function getTodayString() {
@@ -142,7 +141,6 @@ client.on('messageCreate', async message => {
 
             const stats = partnerStats.get(userId);
 
-            // Yeni güne geçildiyse günlük sayacı sıfırla
             if (stats.lastDate !== today) {
                 stats.daily = 0;
                 stats.lastDate = today;
@@ -164,7 +162,6 @@ client.on('messageCreate', async message => {
                 .setFooter({ text: `ID: ${message.author.id}` })
                 .setTimestamp();
 
-            // Orijinal mesaj silinmeden, altına yanıt (reply) olarak gönderilir
             await message.reply({ embeds: [partnerEmbed] }).catch(() => {});
             return;
         }
@@ -175,7 +172,6 @@ client.on('messageCreate', async message => {
     const args = message.content.slice(PREFIX.length).trim().split(/ +/);
     const cmd = args.shift().toLowerCase();
 
-    // Kategorize Edilmiş Yardım Menüsü
     if (cmd === 'yardım') {
         const embed = new EmbedBuilder()
             .setTitle('🛠️ Avenix Bot - Gelişmiş Komut Merkezi')
@@ -399,9 +395,6 @@ client.on('interactionCreate', async interaction => {
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return await interaction.reply({ content: '❌ Yetkin yok!', ephemeral: true });
         await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false }).catch(() => {});
         await interaction.reply({ content: '🔒 Kilitlendi.', ephemeral: true });
-    }
-
-    if (commandName::kilit-aç) { // (Syntax check fix)
     }
 
     if (commandName === 'kilit-aç') {
