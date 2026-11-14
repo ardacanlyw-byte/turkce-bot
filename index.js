@@ -5,7 +5,7 @@ http.createServer((req, res) => {
     res.end('Bot aktif!\n');
 }).listen(process.env.PORT || 3000);
 
-// --- KRİTİK HATA Yakalayıcılar (Botun çökmesini önler) ---
+// --- KRİTİK HATA YAKALAYICILAR ---
 process.on('unhandledRejection', error => {
     console.error('⚠️ Yakalanmayan Asenkron Hata:', error);
 });
@@ -44,18 +44,18 @@ client.once('clientReady', async () => {
         new SlashCommandBuilder().setName('yardım').setDescription('Botun tüm komut listesini gösterir.'),
         new SlashCommandBuilder().setName('ping').setDescription('Botun gecikme süresini ölçer.'),
         new SlashCommandBuilder().setName('zar').setDescription('1 ile 6 arasında rastgele zar atar.'),
-        new SlashCommandBuilder().setName('temizle').setDescription('Belirtilen miktarda mesajı siler.').addIntegerOption(option => option.name('sayı').setDescription('Silinecek mesaj sayısı (1-100)').setRequired(true)),
-        new SlashCommandBuilder().setName('yasakla').setDescription('Bir kullanıcıyı sunucudan kalıcı olarak yasaklar.').addUserOption(option => option.name('kullanıcı').setDescription('Yasaklanacak kişi').setRequired(true)).addStringOption(option => option.name('sebep').setDescription('Yasaklama sebebi')),
-        new SlashCommandBuilder().setName('yasak-kaldır').setDescription('ID ile kullanıcının yasağını kaldırır.').addStringOption(option => option.name('id').setDescription('Kullanıcı ID').setRequired(true)),
-        new SlashCommandBuilder().setName('at').setDescription('Bir kullanıcıyı sunucudan atar.').addUserOption(option => option.name('kullanıcı').setDescription('Atılacak kişi').setRequired(true)).addStringOption(option => option.name('sebep').setDescription('Atılma sebebi')),
-        new SlashCommandBuilder().setName('sustur').setDescription('Bir kullanıcıya zaman aşımı (mute) uygular.').addUserOption(option => option.name('kullanıcı').setDescription('Susturulacak kişi').setRequired(true)).addIntegerOption(option => option.name('dakika').setDescription('Süre (dakika)').setRequired(true)),
-        new SlashCommandBuilder().setName('yavaş-mod').setDescription('Kanalda yavaş mod (slowmode) ayarlar.').addIntegerOption(option => option.name('saniye').setDescription('Saniye (0 kapatır)').setRequired(true)),
+        new SlashCommandBuilder().setName('temizle').setDescription('Belirtilen miktarda mesajı siler.').addIntegerOption(option => option.setName('sayı').setDescription('Silinecek mesaj sayısı (1-100)').setRequired(true)),
+        new SlashCommandBuilder().setName('yasakla').setDescription('Bir kullanıcıyı sunucudan kalıcı olarak yasaklar.').addUserOption(option => option.setName('kullanıcı').setDescription('Yasaklanacak kişi').setRequired(true)).addStringOption(option => option.setName('sebep').setDescription('Yasaklama sebebi')),
+        new SlashCommandBuilder().setName('yasak-kaldır').setDescription('ID ile kullanıcının yasağını kaldırır.').addStringOption(option => option.setName('id').setDescription('Kullanıcı ID').setRequired(true)),
+        new SlashCommandBuilder().setName('at').setDescription('Bir kullanıcıyı sunucudan atar.').addUserOption(option => option.setName('kullanıcı').setDescription('Atılacak kişi').setRequired(true)).addStringOption(option => option.setName('sebep').setDescription('Atılma sebebi')),
+        new SlashCommandBuilder().setName('sustur').setDescription('Bir kullanıcıya zaman aşımı (mute) uygular.').addUserOption(option => option.setName('kullanıcı').setDescription('Susturulacak kişi').setRequired(true)).addIntegerOption(option => option.setName('dakika').setDescription('Süre (dakika)').setRequired(true)),
+        new SlashCommandBuilder().setName('yavaş-mod').setDescription('Kanalda yavaş mod (slowmode) ayarlar.').addIntegerOption(option => option.setName('saniye').setDescription('Saniye (0 kapatır)').setRequired(true)),
         new SlashCommandBuilder().setName('kilitle').setDescription('Kanalı mesaj yazmaya kapatır.'),
         new SlashCommandBuilder().setName('kilit-aç').setDescription('Kanalın kilidini açar.'),
-        new SlashCommandBuilder().setName('kullanıcı-bilgi').setDescription('Bir kullanıcının detaylı bilgilerini gösterir.').addUserOption(option => option.name('kullanıcı').setDescription('Bilgisi istenen kişi')),
+        new SlashCommandBuilder().setName('kullanıcı-bilgi').setDescription('Bir kullanıcının detaylı bilgilerini gösterir.').addUserOption(option => option.setName('kullanıcı').setDescription('Bilgisi istenen kişi')),
         new SlashCommandBuilder().setName('sunucu-bilgi').setDescription('Sunucu istatistiklerini gösterir.'),
-        new SlashCommandBuilder().setName('duyuru').setDescription('Bot aracılığıyla duyuru metni yayımlar.').addStringOption(option => option.name('mesaj').setDescription('Duyuru metni').setRequired(true)),
-        new SlashCommandBuilder().setName('partner').setDescription('Partnerlik duyurusu yapar.').addStringOption(option => option.name('metin').setDescription('Partner metni veya davet linki').setRequired(true))
+        new SlashCommandBuilder().setName('duyuru').setDescription('Bot aracılığıyla duyuru metni yayımlar.').addStringOption(option => option.setName('mesaj').setDescription('Duyuru metni').setRequired(true)),
+        new SlashCommandBuilder().setName('partner').setDescription('Partnerlik duyurusu yapar.').addStringOption(option => option.setName('metin').setDescription('Partner metni veya davet linki').setRequired(true))
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -159,7 +159,7 @@ client.on('messageCreate', async message => {
             const user = message.mentions.users.first();
             const reason = args.slice(1).join(' ') || 'Sebep belirtilmedi.';
             if (!user) return message.reply('⚠️ Kullanım: `a!yasakla @kullanıcı [sebep]`');
-            await message.guild.bans.create(user, { reason }).catch(() => message.reply('❌ Kullanıcı yasaklanamadı (yetkim yetmiyor olabilir).'));
+            await message.guild.bans.create(user, { reason }).catch(() => message.reply('❌ Kullanıcı yasaklanamadı.'));
             return message.reply(`✅ **${user.tag}** yasaklandı.`);
         }
 
@@ -345,49 +345,4 @@ client.on('interactionCreate', async interaction => {
         }
 
         if (commandName === 'kullanıcı-bilgi') {
-            const member = interaction.options.getMember('kullanıcı') || interaction.member;
-            const embed = new EmbedBuilder()
-                .setTitle(`👤 ${member.user.tag}`)
-                .addFields(
-                    { name: '🆔 ID', value: member.id, inline: true },
-                    { name: '📅 Katılım', value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>`, inline: true }
-                )
-                .setColor('#00ffcc');
-            return await interaction.reply({ embeds: [embed] });
-        }
-
-        if (commandName === 'sunucu-bilgi') {
-            const { guild } = interaction;
-            const embed = new EmbedBuilder()
-                .setTitle(`📊 ${guild.name}`)
-                .addFields(
-                    { name: '👥 Üye', value: `${guild.memberCount}`, inline: true },
-                    { name: '👑 Sahip', value: `<@${guild.ownerId}>`, inline: true }
-                )
-                .setColor('#ff00aa');
-            return await interaction.reply({ embeds: [embed] });
-        }
-
-        if (commandName === 'duyuru') {
-            if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return await interaction.reply({ content: '❌ Yetkin yok!', ephemeral: true });
-            const text = interaction.options.getString('mesaj');
-            await interaction.channel.send(`📢 **Duyuru:** ${text}`).catch(() => {});
-            return await interaction.reply({ content: '✅ Duyuru gönderildi.', ephemeral: true });
-        }
-
-        if (commandName === 'partner') {
-            const text = interaction.options.getString('metin');
-            const logChannel = interaction.guild.channels.cache.find(ch => ch.name === 'partner-log');
-            if (!logChannel) return await interaction.reply({ content: '⚠️ `#partner-log` kanalı yok!', ephemeral: true });
-
-            const embed = new EmbedBuilder().setTitle('🤝 Yeni Partner Duyurusu!').setDescription(text).setColor('#ffd700');
-            await logChannel.send({ embeds: [embed] }).catch(() => {});
-            return await interaction.reply({ content: '✅ Gönderildi!', ephemeral: true });
-        }
-    } catch (err) {
-        console.error('Slash Komut Hatası:', err);
-    }
-});
-
-// Botu başlat
-client.login(process.env.DISCORD_TOKEN);
+            const member = interaction.
