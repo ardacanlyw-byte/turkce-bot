@@ -64,7 +64,6 @@ client.once('clientReady', async () => {
 // --- OTOMATİK GELİŞMİŞ LOG SİSTEMLERİ ---
 // ==========================================
 
-// 1. Üye Katılma / Ayrılma Logu
 client.on('guildMemberAdd', member => {
     const channel = member.guild.channels.cache.find(ch => ch.name === 'hosgeldin-hg' || ch.name === 'hoşgeldin');
     if (channel) {
@@ -79,7 +78,6 @@ client.on('guildMemberRemove', member => {
     }
 });
 
-// 2. Mesaj Silinme Logu (#mesaj-log veya #mod-log kanalına gider)
 client.on('messageDelete', message => {
     if (!message.guild || message.author?.bot) return;
     const logChannel = message.guild.channels.cache.find(ch => ch.name === 'mesaj-log' || ch.name === 'mod-log');
@@ -97,7 +95,6 @@ client.on('messageDelete', message => {
     logChannel.send({ embeds: [embed] }).catch(() => {});
 });
 
-// 3. Mesaj Düzenlenme Logu
 client.on('messageUpdate', (oldMessage, newMessage) => {
     if (!oldMessage.guild || oldMessage.author?.bot || oldMessage.content === newMessage.content) return;
     const logChannel = oldMessage.guild.channels.cache.find(ch => ch.name === 'mesaj-log' || ch.name === 'mod-log');
@@ -124,7 +121,6 @@ client.on('messageCreate', async message => {
     const args = message.content.slice(PREFIX.length).trim().split(/ +/);
     const command = args.shift().toLowerCase();
 
-    // YARDIM
     if (command === 'yardım') {
         const embed = new EmbedBuilder()
             .setTitle('🛠️ Türkçe Gelişmiş Bot Komut Listesi')
@@ -132,8 +128,7 @@ client.on('messageCreate', async message => {
             .addFields(
                 { name: '🛡️ Moderasyon', value: '`a!yasakla`, `a!yasak-kaldır`, `a!at`, `a!sustur`, `a!temizle`, `a!yavaş-mod`, `a!kilitle`, `a!kilit-aç`' },
                 { name: '📊 Bilgi & Eğlence', value: '`a!kullanıcı-bilgi`, `a!sunucu-bilgi`, `a!duyuru`, `a!selam`, `a!ping`, `a!zar`, `a!partner`' }
-            )
-            .setFooter({ text: 'Komutları ister a! ön ekiyle ister / ile kullanabilirsin!' });
+            );
         return message.reply({ embeds: [embed] });
     }
 
@@ -145,7 +140,6 @@ client.on('messageCreate', async message => {
         return message.reply(`🎲 Attığın zar: **${sonuc}**`);
     }
 
-    // TEMİZLE
     if (command === 'temizle') {
         if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages))
             return message.reply('❌ Bu komut için *Mesajları Yönet* yetkin olmalı!');
@@ -159,136 +153,106 @@ client.on('messageCreate', async message => {
         setTimeout(() => msg.delete().catch(() => {}), 3000);
     }
 
-    // YASAKLA (BAN)
     if (command === 'yasakla') {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers))
-            return message.reply('❌ Bu komut için *Üyeleri Yasakla* yetkin olmalı!');
-
+        if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) return message.reply('❌ Yetkiniz yok!');
         const user = message.mentions.users.first();
         const reason = args.slice(1).join(' ') || 'Sebep belirtilmedi.';
         if (!user) return message.reply('⚠️ Kullanım: `a!yasakla @kullanıcı [sebep]`');
-
         await message.guild.bans.create(user, { reason });
-        return message.reply(`✅ **${user.tag}** sunucudan yasaklandı.`);
+        return message.reply(`✅ **${user.tag}** yasaklandı.`);
     }
 
-    // YASAK KALDIR (UNBAN)
     if (command === 'yasak-kaldır') {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers))
-            return message.reply('❌ Yetkiniz yok!');
+        if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) return message.reply('❌ Yetkiniz yok!');
         const userId = args[0];
-        if (!userId) return message.reply('⚠️ Kullanım: `a!yasak-kaldır [Kullanıcı ID]`');
-        
+        if (!userId) return message.reply('⚠️ Kullanım: `a!yasak-kaldır [ID]`');
         await message.guild.bans.remove(userId);
-        return message.reply(`✅ Belirtilen kullanıcının yasağı kaldırıldı.`);
+        return message.reply(`✅ Yasağı kaldırıldı.`);
     }
 
-    // AT (KICK)
     if (command === 'at') {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers))
-            return message.reply('❌ Bu komut için yetkin yok!');
-
+        if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) return message.reply('❌ Yetkiniz yok!');
         const user = message.mentions.users.first();
-        const reason = args.slice(1).join(' ') || 'Sebep belirtilmedi.';
-        if (!user) return message.reply('⚠️ Kullanım: `a!at @kullanıcı [sebep]`');
-
+        if (!user) return message.reply('⚠️ Kullanım: `a!at @kullanıcı`');
         const member = message.guild.members.cache.get(user.id);
-        await member.kick(reason);
-        return message.reply(`✅ **${user.tag}** sunucudan atıldı.`);
+        await member.kick();
+        return message.reply(`✅ **${user.tag}** atıldı.`);
     }
 
-    // SUSTUR (TIMEOUT)
     if (command === 'sustur') {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers))
-            return message.reply('❌ Yetkiniz yok!');
-
+        if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return message.reply('❌ Yetkiniz yok!');
         const user = message.mentions.users.first();
         const minutes = parseInt(args[1]);
         if (!user || !minutes) return message.reply('⚠️ Kullanım: `a!sustur @kullanıcı [dakika]`');
-
         const member = message.guild.members.cache.get(user.id);
-        await member.timeout(minutes * 60 * 1000, 'Moderatör tarafından susturuldu.');
-        return message.reply(`🔇 **${user.tag}** ${minutes} dakika süreyle susturuldu.`);
+        await member.timeout(minutes * 60 * 1000);
+        return message.reply(`🔇 **${user.tag}** ${minutes} dakika susturuldu.`);
     }
 
-    // YAVAŞ MOD (SLOWMODE)
     if (command === 'yavaş-mod') {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.ManageChannels))
-            return message.reply('❌ Yetkiniz yok!');
-
+        if (!message.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return message.reply('❌ Yetkiniz yok!');
         const time = parseInt(args[0]);
         if (isNaN(time)) return message.reply('⚠️ Kullanım: `a!yavaş-mod [saniye]`');
-
         await message.channel.setRateLimitPerUser(time);
-        return message.reply(`⏱️ Kanal yavaş modu **${time}** saniye yapıldı.`);
+        return message.reply(`⏱️ Yavaş mod **${time}** saniye yapıldı.`);
     }
 
-    // KİLİTLE & KİLİT AÇ
     if (command === 'kilitle') {
         if (!message.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return message.reply('❌ Yetkiniz yok!');
         await message.channel.permissionOverwrites.edit(message.guild.roles.everyone, { SendMessages: false });
-        return message.reply('🔒 Kanal mesaj yazmaya kapatıldı.');
+        return message.reply('🔒 Kanal kilitlendi.');
     }
 
     if (command === 'kilit-aç') {
         if (!message.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return message.reply('❌ Yetkiniz yok!');
         await message.channel.permissionOverwrites.edit(message.guild.roles.everyone, { SendMessages: true });
-        return message.reply('🔓 Kanalın kilidi açıldı.');
+        return message.reply('🔓 Kilidi açıldı.');
     }
 
-    // KULLANICI BİLGİ
     if (command === 'kullanıcı-bilgi') {
         const member = message.mentions.members.first() || message.member;
         const embed = new EmbedBuilder()
-            .setTitle(`👤 ${member.user.tag} Bilgileri`)
-            .setThumbnail(member.user.displayAvatarURL())
+            .setTitle(`👤 ${member.user.tag}`)
             .addFields(
                 { name: '🆔 ID', value: member.id, inline: true },
-                { name: '📅 Sunucuya Katılım', value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>`, inline: true },
-                { name: '🤖 Hesap Oluşturma', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true }
+                { name: '📅 Katılım', value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>`, inline: true }
             )
             .setColor('#00ffcc');
         return message.reply({ embeds: [embed] });
     }
 
-    // SUNUCU BİLGİ
     if (command === 'sunucu-bilgi') {
         const { guild } = message;
         const embed = new EmbedBuilder()
-            .setTitle(`📊 ${guild.name} İstatistikleri`)
-            .setThumbnail(guild.iconURL())
+            .setTitle(`📊 ${guild.name}`)
             .addFields(
-                { name: '👑 Sunucu Sahibi', value: `<@${guild.ownerId}>`, inline: true },
-                { name: '👥 Üye Sayısı', value: `${guild.memberCount} kişi`, inline: true },
-                { name: '📅 Kuruluş Tarihi', value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:D>`, inline: true }
+                { name: '👥 Üye', value: `${guild.memberCount}`, inline: true },
+                { name: '👑 Sahip', value: `<@${guild.ownerId}>`, inline: true }
             )
             .setColor('#ff00aa');
         return message.reply({ embeds: [embed] });
     }
 
-    // DUYURU (SAY)
     if (command === 'duyuru') {
         if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return message.reply('❌ Yetkiniz yok!');
         const text = args.join(' ');
-        if (!text) return message.reply('⚠️ Yazılacak duyuru metnini belirtin.');
+        if (!text) return message.reply('⚠️ Metin girin.');
         await message.delete().catch(() => {});
         return message.channel.send(`📢 **Duyuru:** ${text}`);
     }
 
-    // PARTNER
     if (command === 'partner') {
         const text = args.join(' ');
-        if (!text) return message.reply('⚠️ Partner metnini yazın!');
+        if (!text) return message.reply('⚠️ Partner metni yazın!');
         const logChannel = message.guild.channels.cache.find(ch => ch.name === 'partner-log');
-        if (!logChannel) return message.reply('⚠️ `#partner-log` adında kanal bulamadım!');
-
+        if (!logChannel) return message.reply('⚠️ `#partner-log` kanalı yok!');
         const embed = new EmbedBuilder().setTitle('🤝 Yeni Partner Duyurusu!').setDescription(text).setColor('#ffd700');
         await logChannel.send({ embeds: [embed] });
-        return message.reply('✅ Partner duyurusu başarıyla `#partner-log` kanalına gönderildi!');
+        return message.reply('✅ Gönderildi!');
     }
 });
 
-// --- TÜRKÇE SLASH (/) KOMUT YÖNETİCİSİ ---
+// --- SLASH (/) KOMUT YÖNETİCİSİ ---
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
     const { commandName } = interaction;
@@ -314,10 +278,10 @@ client.on('interactionCreate', async interaction => {
 
     if (commandName === 'temizle') {
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages))
-            return interaction.reply({ content: '❌ Mesajları Yönet yetkin yok!', ephemeral: true });
+            return interaction.reply({ content: '❌ Yetkin yok!', ephemeral: true });
         const count = interaction.options.getInteger('sayı');
         await interaction.channel.bulkDelete(count, true).catch(() => {});
-        await interaction.reply({ content: `🧹 **${count}** adet mesaj silindi.`, ephemeral: true });
+        await interaction.reply({ content: `🧹 **${count}** mesaj silindi.`, ephemeral: true });
     }
 
     if (commandName === 'yasakla') {
@@ -362,13 +326,13 @@ client.on('interactionCreate', async interaction => {
     if (commandName === 'kilitle') {
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return interaction.reply({ content: '❌ Yetkin yok!', ephemeral: true });
         await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
-        await interaction.reply('🔒 Kanal kilitlendi.');
+        await interaction.reply('🔒 Kilitlendi.');
     }
 
     if (commandName === 'kilit-aç') {
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return interaction.reply({ content: '❌ Yetkin yok!', ephemeral: true });
         await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: true });
-        await interaction.reply('🔓 Kanal kilidi açıldı.');
+        await interaction.reply('🔓 Kilidi açıldı.'); // DÜZELTİLEN KISIM BURASI
     }
 
     if (commandName === 'kullanıcı-bilgi') {
